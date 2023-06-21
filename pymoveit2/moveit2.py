@@ -18,6 +18,7 @@ from moveit_msgs.srv import (
     GetPositionFK,
     GetPositionIK,
 )
+from std_msgs.msg import String
 
 import rclpy
 from rclpy.action import ActionClient
@@ -40,7 +41,6 @@ class MoveIt2State(Enum):
     IDLE = 0
     REQUESTING = 1
     EXECUTING = 2
-    CANCELING = 3
 
 class MoveIt2:
     """
@@ -197,6 +197,10 @@ class MoveIt2:
             CollisionObject, "/collision_object", 10
         )
 
+        self.__cancellation_pub = self._node.create_publisher(
+            String, "/trajectory_execution_event", 1
+        )
+
         self.__joint_state_mutex = threading.Lock()
         self.__joint_state = None
         self.__new_joint_state_available = False
@@ -220,7 +224,6 @@ class MoveIt2:
         # Internal states that monitor the current motion requests and execution
         self.__is_motion_requested = False
         self.__is_executing = False
-        self.__cancellation_future = None
         self.__execution_goal_handle = None
         self.__last_error_code = None
         self.__wait_until_executed_rate = self._node.create_rate(1000.0)
@@ -235,44 +238,23 @@ class MoveIt2:
             if self.__is_motion_requested:
                 return MoveIt2State.REQUESTING
             elif self.__is_executing:
-                print(self.__execution_goal_handle.status)
-                if self.__cancellation_future is None:
-                    return MoveIt2State.EXECUTING
-                else:
-                    return MoveIt2State.CANCELING
+                return MoveIt2State.EXECUTING
             else:
                 return MoveIt2State.IDLE
 
-    def cancel_execution(self) -> Optional[Future]:
+    def cancel_execution(self):
         if self.query_state() != MoveIt2State.EXECUTING:
             self._node.get_logger().warn(
                     "Attempted to cancel without active goal."
                 )
             return None
 
-        with self.__execution_mutex:
-            self.__cancellation_future = self.__execution_goal_handle.cancel_goal_async()
-            self.__cancellation_future.add_done_callback(
-                self.__cancel_callback
-            )
-
-        return self.__cancellation_future
-
-    def __cancel_callback(self, response):
-        self.__execution_mutex.acquire()
-        cancel_response = response.result()
-        if len(cancel_response.goals_canceling) > 0:
-            self._node.get_logger().info('Execution successfully canceled')
-            self.__is_executing = False
-            self.__execution_goal_handle = None
-            self.__cancellation_future = None
-        else:
-            self._node.get_logger().error('Execution failed to cancel')
-        self.__execution_mutex.release()
+        cancel_string = String()
+        cancel_string.data = "stop"
+        self.__cancellation_pub.publish(cancel_string)
 
     def get_execution_future(self) -> Optional[Future]:
-        with self.__execution_mutex:
-            if self.query_state() != MoveIt2State.EXECUTING:
+        if self.query_state() != MoveIt2State.EXECUTING:
                 self._node.get_logger().warn(
                         "Need active goal for future."
                     )
@@ -1101,7 +1083,6 @@ class MoveIt2:
         self.__execution_mutex.acquire()
         stamp = self._node.get_clock().now().to_msg()
         self.__move_action_goal.request.workspace_parameters.header.stamp = stamp
-
         if not self.__move_action_client.server_is_ready():
             self._node.get_logger().warn(
                 f"Action server '{self.__move_action_client._action_name}' is not yet available. Better luck next time!"
@@ -1143,7 +1124,7 @@ class MoveIt2:
     def __result_callback_move_action(self, res):
         self.__execution_mutex.acquire()
         if res.result().status != GoalStatus.STATUS_SUCCEEDED:
-            self._node.get_logger().error(
+            self._node.get_logger().warn(
                 f"Action '{self.__move_action_client._action_name}' was unsuccessful: {res.result().status}."
             )
 
@@ -1205,7 +1186,7 @@ class MoveIt2:
     def __result_callback_execute_trajectory(self, res):
         self.__execution_mutex.acquire()
         if res.result().status != GoalStatus.STATUS_SUCCEEDED:
-            self._node.get_logger().error(
+            self._node.get_logger().warn(
                 f"Action '{self.__execute_trajectory_action_client._action_name}' was unsuccessful: {res.result().status}."
             )
 
