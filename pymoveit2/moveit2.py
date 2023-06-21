@@ -55,7 +55,7 @@ class MoveIt2:
         base_link_name: str,
         end_effector_name: str,
         group_name: str = "arm",
-        use_move_action: bool = True,
+        use_move_action: bool = False,
         callback_group: Optional[CallbackGroup] = None,
     ):
         """
@@ -164,20 +164,20 @@ class MoveIt2:
                 ),
                 callback_group=self._callback_group,
             )
-        else:
-            # Otherwise create a separate service client for planning
-            self._plan_kinematic_path_service = self._node.create_client(
-                srv_type=GetMotionPlan,
-                srv_name="plan_kinematic_path",
-                qos_profile=QoSProfile(
-                    durability=QoSDurabilityPolicy.VOLATILE,
-                    reliability=QoSReliabilityPolicy.RELIABLE,
-                    history=QoSHistoryPolicy.KEEP_LAST,
-                    depth=1,
-                ),
-                callback_group=callback_group,
-            )
-            self.__kinematic_path_request = GetMotionPlan.Request()
+            
+        # Also create a separate service client for planning
+        self._plan_kinematic_path_service = self._node.create_client(
+            srv_type=GetMotionPlan,
+            srv_name="plan_kinematic_path",
+            qos_profile=QoSProfile(
+                durability=QoSDurabilityPolicy.VOLATILE,
+                reliability=QoSReliabilityPolicy.RELIABLE,
+                history=QoSHistoryPolicy.KEEP_LAST,
+                depth=1,
+            ),
+            callback_group=callback_group,
+        )
+        self.__kinematic_path_request = GetMotionPlan.Request()
 
         # Create a separate service client for Cartesian planning
         self._plan_cartesian_path_service = self._node.create_client(
