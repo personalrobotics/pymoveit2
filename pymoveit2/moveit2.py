@@ -1084,6 +1084,52 @@ class MoveIt2:
         self.__is_executing = False
         self.__execution_mutex.release()
 
+    def add_collision_primitive(
+        self,
+        id: str,
+        dims: List[float],
+        position: Union[Point, Tuple[float, float, float]],
+        quat_xyzw: Union[Quaternion, Tuple[float, float, float, float]],
+        prim_type: int = SolidPrimitive.BOX,
+        operation: int = CollisionObject.ADD,
+        frame_id: Optional[str] = None,
+    ):
+        """
+        Add colision object solid primitive
+        Documentation for dims: http://docs.ros.org/en/melodic/api/shape_msgs/html/msg/SolidPrimitive.html
+        """
+
+        msg = CollisionObject()
+        shape = SolidPrimitive()
+        shape.type = prim_type
+        shape.dimensions = dims
+        msg.primitives.append(shape)
+
+        if not isinstance(position, Point):
+            position = Point(
+                x=float(position[0]), y=float(position[1]), z=float(position[2])
+            )
+        if not isinstance(quat_xyzw, Quaternion):
+            quat_xyzw = Quaternion(
+                x=float(quat_xyzw[0]),
+                y=float(quat_xyzw[1]),
+                z=float(quat_xyzw[2]),
+                w=float(quat_xyzw[3]),
+            )
+
+        pose = Pose()
+        pose.position = position
+        pose.orientation = quat_xyzw
+        msg.pose = pose
+        msg.id = id
+        msg.operation = operation
+        msg.header.frame_id = (
+            frame_id if frame_id is not None else self.__base_link_name
+        )
+        msg.header.stamp = self._node.get_clock().now().to_msg()
+
+        self.__collision_object_publisher.publish(msg)
+
     def add_collision_mesh(
         self,
         filepath: str,
@@ -1145,6 +1191,9 @@ class MoveIt2:
         self.__collision_object_publisher.publish(msg)
 
     def remove_collision_mesh(self, id: str):
+        return self.remove_collision(id)
+        
+    def remove_collision(self, id: str):
         """
         Remove collision object specified by its `id`.
         """
