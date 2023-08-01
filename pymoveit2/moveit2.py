@@ -388,7 +388,7 @@ class MoveIt2:
         joint_names: Optional[List[str]] = None,
         frame_id: Optional[str] = None,
         tolerance_position: float = 0.001,
-        tolerance_orientation: float = 0.001,
+        tolerance_orientation: Union[float, Tuple[float, float, float]] = 0.001,
         tolerance_joint_position: float = 0.001,
         weight_position: float = 1.0,
         weight_orientation: float = 1.0,
@@ -454,7 +454,7 @@ class MoveIt2:
         joint_names: Optional[List[str]] = None,
         frame_id: Optional[str] = None,
         tolerance_position: float = 0.001,
-        tolerance_orientation: float = 0.001,
+        tolerance_orientation: Union[float, Tuple[float, float, float]] = 0.001,
         tolerance_joint_position: float = 0.001,
         weight_position: float = 1.0,
         weight_orientation: float = 1.0,
@@ -590,7 +590,7 @@ class MoveIt2:
         frame_id: Optional[str] = None,
         target_link: Optional[str] = None,
         tolerance_position: float = 0.001,
-        tolerance_orientation: float = 0.001,
+        tolerance_orientation: Union[float, Tuple[float, float, float]] = 0.001,
         weight_position: float = 1.0,
         weight_orientation: float = 1.0,
     ):
@@ -671,8 +671,9 @@ class MoveIt2:
         quat_xyzw: Union[Quaternion, Tuple[float, float, float, float]],
         frame_id: Optional[str] = None,
         target_link: Optional[str] = None,
-        tolerance: float = 0.001,
+        tolerance: Union[float, Tuple[float, float, float]] = 0.001,
         weight: float = 1.0,
+        parameterization: int = 0, # 0: Euler, 1: Rotation Vector
     ):
         """
         Set Cartesian orientation goal of `target_link` with respect to `frame_id`.
@@ -701,9 +702,16 @@ class MoveIt2:
             constraint.orientation.w = float(quat_xyzw[3])
 
         # Define tolerances
-        constraint.absolute_x_axis_tolerance = tolerance
-        constraint.absolute_y_axis_tolerance = tolerance
-        constraint.absolute_z_axis_tolerance = tolerance
+        if type(tolerance) == float:
+            tolerance_xyz = (tolerance, tolerance, tolerance)
+        else:
+            tolerance_xyz = tolerance
+        constraint.absolute_x_axis_tolerance = tolerance_xyz[0]
+        constraint.absolute_y_axis_tolerance = tolerance_xyz[1]
+        constraint.absolute_z_axis_tolerance = tolerance_xyz[2]
+
+        # Define parameterization (how to interpret the tolerance)
+        constraint.parameterization = parameterization
 
         # Set weight of the constraint
         constraint.weight = weight
@@ -862,8 +870,9 @@ class MoveIt2:
         quat_xyzw: Union[Quaternion, Tuple[float, float, float, float]],
         frame_id: Optional[str] = None,
         target_link: Optional[str] = None,
-        tolerance: float = 0.001,
+        tolerance: Union[float, Tuple[float, float, float]] = 0.001,
         weight: float = 1.0,
+        parameterization: int = 0, # 0: Euler Angles, 1: Rotation Vector
     ):
         """
         Set Cartesian orientation goal of `target_link` with respect to `frame_id`.
@@ -892,9 +901,16 @@ class MoveIt2:
             constraint.orientation.w = float(quat_xyzw[3])
 
         # Define tolerances
-        constraint.absolute_x_axis_tolerance = tolerance
-        constraint.absolute_y_axis_tolerance = tolerance
-        constraint.absolute_z_axis_tolerance = tolerance
+        if type(tolerance) == float:
+            tolerance_xyz = (tolerance, tolerance, tolerance)
+        else:
+            tolerance_xyz = tolerance
+        constraint.absolute_x_axis_tolerance = tolerance_xyz[0]
+        constraint.absolute_y_axis_tolerance = tolerance_xyz[1]
+        constraint.absolute_z_axis_tolerance = tolerance_xyz[2]
+
+        # Define the parameterization (how to interpret the tolerance)
+        constraint.parameterization = parameterization
 
         # Set weight of the constraint
         constraint.weight = weight
