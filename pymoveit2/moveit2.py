@@ -1707,6 +1707,13 @@ class MoveIt2:
     def allowed_planning_time(self, value: float):
         self.__move_action_goal.request.allowed_planning_time = value
 
+    @property
+    def cartesian_avoid_collisions(self) -> bool:
+        return self.__cartesian_path_request.request.avoid_collisions
+
+    @cartesian_avoid_collisions.setter
+    def cartesian_avoid_collisions(self, value: bool):
+        self.__cartesian_path_request.avoid_collisions = value
 
 def init_joint_state(
     joint_names: List[str],
