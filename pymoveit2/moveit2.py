@@ -1708,6 +1708,7 @@ class MoveIt2:
     def cartesian_avoid_collisions(self, value: bool):
         self.__cartesian_path_request.avoid_collisions = value
 
+    @property
     def pipeline_id(self) -> int:
         return self.__move_action_goal.request.pipeline_id
 
