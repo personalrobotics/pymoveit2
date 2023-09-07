@@ -492,6 +492,7 @@ class MoveIt2:
         weight_joint_position: float = 1.0,
         start_joint_state: Optional[Union[JointState, List[float]]] = None,
         cartesian: bool = False,
+        max_step: float = 0.0025,
     ) -> Optional[Future]:
         """
         Plan motion based on previously set goals. Optional arguments can be passed in to
@@ -543,7 +544,7 @@ class MoveIt2:
 
         # Plan trajectory asynchronously by service call
         if cartesian:
-            future = self._plan_cartesian_path()
+            future = self._plan_cartesian_path(max_step=max_step)
         else:
             # Use service
             future = self._plan_kinematic_path()
