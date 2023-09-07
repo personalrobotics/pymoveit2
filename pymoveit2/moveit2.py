@@ -544,7 +544,7 @@ class MoveIt2:
 
         # Plan trajectory asynchronously by service call
         if cartesian:
-            future = self._plan_cartesian_path(max_step=max_step)
+            future = self._plan_cartesian_path(max_step=max_step, frame_id=frame_id)
         else:
             # Use service
             future = self._plan_kinematic_path()
