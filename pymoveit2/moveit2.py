@@ -1714,6 +1714,14 @@ class MoveIt2:
         # self.__compute_ik_req.ik_request.timeout.nanosec = "Ignored"
 
     @property
+    def end_effector_name(self) -> str:
+        return self.__end_effector_name
+
+    @property
+    def base_link_name(self) -> str:
+        return self.__base_link_name
+
+    @property
     def joint_names(self) -> List[str]:
         return self.__joint_names
 
