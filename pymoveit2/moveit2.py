@@ -7,6 +7,7 @@ from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion
 from moveit_msgs.action import MoveGroup, ExecuteTrajectory
 from moveit_msgs.msg import (
     AllowedCollisionEntry,
+    AttachedCollisionObject,
     CollisionObject,
     Constraints,
     JointConstraint,
@@ -1416,6 +1417,73 @@ class MoveIt2:
             self.__planning_scene.allowed_collision_matrix = self.__old_allowed_collision_matrix
 
         return resp.success
+
+    def add_attached_collision_primitive(
+        self,
+        id: str,
+        link_name: str,
+        dims: List[float],
+        position: Union[Point, Tuple[float, float, float]],
+        quat_xyzw: Union[Quaternion, Tuple[float, float, float, float]],
+        prim_type: int = SolidPrimitive.BOX,
+        frame_id: Optional[str] = None,
+        touch_links: List[str] = [],
+        weight: float = 0.0,
+    ) -> Optional[Future]:
+        """
+        Add an attached colision object solid primitive.
+        Documentation for dims: http://docs.ros.org/en/melodic/api/shape_msgs/html/msg/SolidPrimitive.html
+        """
+        # Create the AttachedCollisionObject message
+        msg = AttachedCollisionObject()
+        msg.link_name = link_name
+        msg.touch_links = touch_links
+        msg.weight = weight
+
+        # Add the object to it
+        shape = SolidPrimitive()
+        shape.type = prim_type
+        shape.dimensions = dims
+        msg.object.primitives.append(shape)
+
+        if not isinstance(position, Point):
+            position = Point(
+                x=float(position[0]), y=float(position[1]), z=float(position[2])
+            )
+        if not isinstance(quat_xyzw, Quaternion):
+            quat_xyzw = Quaternion(
+                x=float(quat_xyzw[0]),
+                y=float(quat_xyzw[1]),
+                z=float(quat_xyzw[2]),
+                w=float(quat_xyzw[3]),
+            )
+
+        pose = Pose()
+        pose.position = position
+        pose.orientation = quat_xyzw
+        msg.object.pose = pose
+        msg.object.id = id
+        msg.object.operation = CollisionObject.ADD
+        msg.object.header.frame_id = (
+            frame_id if frame_id is not None else self.__base_link_name
+        )
+        msg.object.header.stamp = self._node.get_clock().now().to_msg()
+
+        # Create the service request
+        srv_req = ApplyPlanningScene.Request()
+        srv_req.scene.robot_state.attached_collision_objects.append(msg)
+        srv_req.scene.is_diff = True
+
+        # Call the service
+        if not self._apply_planning_scene_service.service_is_ready():
+            self._node.get_logger().warn(
+                f"Service '{self._apply_planning_scene_service.srv_name}' is not yet available. Better luck next time!"
+            )
+            return None
+
+        return self._apply_planning_scene_service.call_async(
+            srv_req
+        )
 
     def __joint_state_callback(self, msg: JointState):
         # Update only if all relevant joints are included in the message
