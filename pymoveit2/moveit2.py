@@ -23,6 +23,7 @@ from moveit_msgs.srv import (
     GetPositionFK,
     GetPositionIK,
 )
+import numpy as np
 from std_msgs.msg import String
 
 import rclpy
@@ -1304,12 +1305,14 @@ class MoveIt2:
         quat_xyzw: Union[Quaternion, Tuple[float, float, float, float]],
         operation: int = CollisionObject.ADD,
         frame_id: Optional[str] = None,
+        scale: Union[float, Tuple[float, float, float]] = 1.0,
     ) -> CollisionObject:
         """
         Creates a collision object with a mesh geometry specified by `filepath`.
         Note: This function requires 'trimesh' Python module to be installed.
         """
 
+        # Load the mesh
         try:
             import trimesh
         except ImportError as err:
@@ -1317,10 +1320,19 @@ class MoveIt2:
                 "Python module 'trimesh' not found! Please install it manually in order "
                 "to add collision objects into the MoveIt 2 planning scene."
             ) from err
-
         mesh = trimesh.load(filepath)
-        msg = CollisionObject()
 
+        # Scale the mesh
+        if isinstance(scale, float):
+            scale = (scale, scale, scale)
+        transform = np.eye(4)
+        transform[0, 0] = scale[0]
+        transform[1, 1] = scale[1]
+        transform[2, 2] = scale[2]
+        mesh.apply_transform(transform)
+
+        # Generate the message
+        msg = CollisionObject()
         if not isinstance(position, Point):
             position = Point(
                 x=float(position[0]), y=float(position[1]), z=float(position[2])
@@ -1332,12 +1344,10 @@ class MoveIt2:
                 z=float(quat_xyzw[2]),
                 w=float(quat_xyzw[3]),
             )
-
         pose = Pose()
         pose.position = position
         pose.orientation = quat_xyzw
         msg.pose = pose
-
         msg.meshes.append(
             Mesh(
                 triangles=[MeshTriangle(vertex_indices=face) for face in mesh.faces],
