@@ -1374,6 +1374,7 @@ class MoveIt2:
         quat_xyzw: Union[Quaternion, Tuple[float, float, float, float]],
         operation: int = CollisionObject.ADD,
         frame_id: Optional[str] = None,
+        scale: Union[float, Tuple[float, float, float]] = 1.0,
     ):
         """
         Adds a collision object with a mesh geometry specified by `filepath`.
@@ -1386,6 +1387,7 @@ class MoveIt2:
             quat_xyzw=quat_xyzw,
             operation=operation,
             frame_id=frame_id,
+            scale=scale,
         )
 
         self.__collision_object_publisher.publish(msg)
@@ -1399,6 +1401,7 @@ class MoveIt2:
         quat_xyzw: Union[Quaternion, Tuple[float, float, float, float]],
         touch_links: List[str] = [],
         weight: float = 0.0,
+        scale: Union[float, Tuple[float, float, float]] = 1.0,
     ) -> Optional[Future]:
         """
         Add an attached colision object with a mesh geometry specified by `filepath`.
@@ -1418,6 +1421,7 @@ class MoveIt2:
             quat_xyzw=quat_xyzw,
             operation=CollisionObject.ADD,
             frame_id=link_name,
+            scale=scale,
         )
 
         # Create the service request
