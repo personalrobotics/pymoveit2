@@ -22,6 +22,7 @@ install(PROGRAMS
     ${EXAMPLES_DIR}/ex_pose_goal.py
     ${EXAMPLES_DIR}/ex_servo.py
     ${EXAMPLES_DIR}/trial.py
+    ${EXAMPLES_DIR}/trial_dual_arms.py
     DESTINATION lib/${PROJECT_NAME}
 )
 
