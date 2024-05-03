@@ -43,16 +43,16 @@ def main():
 
     moveit2_dual_arms.execute(joint_trajectory=plan)
 
-    rate = node.create_rate(10)
+    # rate = node.create_rate(10)
 
-    while moveit2_dual_arms.query_state() != MoveIt2State.EXECUTING:
-        rate.sleep()
-    future_ = moveit2_dual_arms.get_execution_future()
+    # while moveit2_dual_arms.query_state() != MoveIt2State.EXECUTING:
+    #     rate.sleep()
+    # future_ = moveit2_dual_arms.get_execution_future()
 
-    while not future_.done():
-        rate.sleep()
+    # while not future_.done():
+    #     rate.sleep()
 
-    node.get_logger().info("Left arm result status: " + str(future_.result().status))
+    # node.get_logger().info("Left arm result status: " + str(future_.result().status))
 
     rclpy.shutdown()
     executor_thread.join()
