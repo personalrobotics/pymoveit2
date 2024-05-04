@@ -10,6 +10,7 @@ import rclpy
 from rclpy.callback_groups import ReentrantCallbackGroup
 import rclpy.executors
 from rclpy.node import Node
+from geometry_msgs.msg import PoseStamped
 
 from pymoveit2 import MoveIt2, MoveIt2State
 from pymoveit2.robots import geodude_left, geodude_right
@@ -50,27 +51,50 @@ def main():
     moveit2_right.max_velocity = 0.5
     moveit2_right.max_acceleration = 0.5
 
-    left_plan = moveit2_left.plan(joint_positions=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-    right_plan = moveit2_right.plan(joint_positions=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+    pos_left = PoseStamped()
+    pos_left.pose.position.x = -0.330
+    pos_left.pose.position.y = -0.490
+    pos_left.pose.position.z = 1.950
+    pos_left.pose.orientation.x = 0.730
+    pos_left.pose.orientation.y = -0.630
+    pos_left.pose.orientation.z = -0.150
+    pos_left.pose.orientation.w = -0.180
 
-    moveit2_left.execute(joint_trajectory=left_plan)
-    moveit2_right.execute(joint_trajectory=right_plan)
+    pos_right = PoseStamped()
+    pos_right.pose.position.x = 0.320
+    pos_right.pose.position.y = -0.490
+    pos_right.pose.position.z = 1.950
+    pos_right.pose.orientation.x = -0.630
+    pos_right.pose.orientation.y = 0.730
+    pos_right.pose.orientation.z = 0.180
+    pos_right.pose.orientation.w = 0.150
 
-    rate = node.create_rate(10)
+    # left_plan = moveit2_left.plan(joint_positions=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+    # right_plan = moveit2_right.plan(joint_positions=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+    # moveit2_left.execute(joint_trajectory=left_plan)
+    # moveit2_right.execute(joint_trajectory=right_plan)
 
-    while moveit2_left.query_state() != MoveIt2State.EXECUTING:
-        rate.sleep()
-    future_left = moveit2_left.get_execution_future()
+    left_plan = moveit2_left.plan(pose=pos_left, target_link="left_wam7", frame_id="world")
+    right_plan = moveit2_right.plan(pose=pos_right, target_link="right_wam7", frame_id="world")
 
-    while moveit2_right.query_state() != MoveIt2State.EXECUTING:
-        rate.sleep()
-    future_right = moveit2_right.get_execution_future()
+    moveit2_left.execute(left_plan)
+    moveit2_right.execute(right_plan)
 
-    while not future_left.done() or not future_right.done():
-        rate.sleep()
+    # rate = node.create_rate(10)
 
-    node.get_logger().info("Left arm result status: " + str(future_left.result().status))
-    node.get_logger().info("Right arm result status: " + str(future_right.result().status))
+    # while moveit2_left.query_state() != MoveIt2State.EXECUTING:
+    #     rate.sleep()
+    # future_left = moveit2_left.get_execution_future()
+
+    # while moveit2_right.query_state() != MoveIt2State.EXECUTING:
+    #     rate.sleep()
+    # future_right = moveit2_right.get_execution_future()
+
+    # while not future_left.done() or not future_right.done():
+    #     rate.sleep()
+
+    # node.get_logger().info("Left arm result status: " + str(future_left.result().status))
+    # node.get_logger().info("Right arm result status: " + str(future_right.result().status))
 
     rclpy.shutdown()
     executor_thread.join()
