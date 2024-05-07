@@ -67,16 +67,16 @@ def main():
     plan = moveit2_dual_arms.plan()
     moveit2_dual_arms.execute(plan)
 
-    rate = node.create_rate(5)
+    # rate = node.create_rate(5)
 
-    while moveit2_dual_arms.query_state() != MoveIt2State.EXECUTING or moveit2_dual_arms.query_state() != MoveIt2State.REQUESTING or moveit2_dual_arms.query_state() != MoveIt2State.IDLE:
-        rate.sleep()
-    future_ = moveit2_dual_arms.get_execution_future()
+    # while moveit2_dual_arms.query_state() != MoveIt2State.EXECUTING or moveit2_dual_arms.query_state() != MoveIt2State.REQUESTING or moveit2_dual_arms.query_state() != MoveIt2State.IDLE:
+    #     rate.sleep()
+    # future_ = moveit2_dual_arms.get_execution_future()
 
-    while not future_.done():
-        rate.sleep()
+    # while not future_.done():
+    #     rate.sleep()
 
-    node.get_logger().info("status: " + str(future_.result().status))
+    # node.get_logger().info("status: " + str(future_.result().status))
 
     moveit2_dual_arms.clear_goal_constraints()
     moveit2_dual_arms.clear_path_constraints()
