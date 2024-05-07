@@ -26,7 +26,7 @@ def main():
         node=node,
         joint_names=geodude_dual_arms.joint_names(),
         base_link_name="world",
-        end_effector_name="left_wam7",
+        end_effector_name="world",
         group_name=geodude_dual_arms.MOVE_GROUP_ARM,
         callback_group=callback_group,
     )
@@ -40,35 +40,36 @@ def main():
     moveit2_dual_arms.max_acceleration = 0.25
 
     pos_left = PoseStamped()
-    pos_left.pose.position.x = -0.33
-    pos_left.pose.position.y = -0.49
-    pos_left.pose.position.z = 1.95
-    pos_left.pose.orientation.x = 0.00
-    pos_left.pose.orientation.y = 0.00
-    pos_left.pose.orientation.z = 0.00
-    pos_left.pose.orientation.w = 1.00
+    pos_left.pose.position.x = 0.300
+    pos_left.pose.position.y = -0.539
+    pos_left.pose.position.z = 0.302
+    pos_left.pose.orientation.x = -0.086
+    pos_left.pose.orientation.y = 0.701
+    pos_left.pose.orientation.z = -0.701
+    pos_left.pose.orientation.w = -0.086
 
     pos_right = PoseStamped()
-    pos_right.pose.position.x = 0.32
-    pos_right.pose.position.y = -0.49
-    pos_right.pose.position.z = 1.95
-    pos_right.pose.orientation.x = 0.00
-    pos_right.pose.orientation.y = 0.00
-    pos_right.pose.orientation.z = 0.00
-    pos_right.pose.orientation.w = 1.00
+    pos_right.pose.position.x = -0.026
+    pos_right.pose.position.y = -0.545
+    pos_right.pose.position.z = 0.620
+    pos_right.pose.orientation.x = 0.577
+    pos_right.pose.orientation.y = 0.605
+    pos_right.pose.orientation.z = -0.523
+    pos_right.pose.orientation.w = -0.160
 
-    moveit2_dual_arms.set_pose_goal(pos_left, target_link="left_wam7", frame_id="world")
-    moveit2_dual_arms.set_pose_goal(pos_right, target_link="right_wam7", frame_id="world")
+    # moveit2_dual_arms.set_pose_goal(pos_left, target_link="left_wam7", frame_id="left_wam_base")
+    # moveit2_dual_arms.set_pose_goal(pos_right, target_link="right_wam7", frame_id="right_wam_base")
+    moveit2_dual_arms.set_position_goal(pos_left.pose.position, frame_id="left_wam_base", target_link="left_wam7")
+    moveit2_dual_arms.set_orientation_goal(pos_left.pose.orientation, frame_id="left_wam_base", target_link="left_wam7")
+    moveit2_dual_arms.set_position_goal(pos_right.pose.position, frame_id="right_wam_base", target_link="right_wam7")
+    moveit2_dual_arms.set_orientation_goal(pos_right.pose.orientation, frame_id="right_wam_base", target_link="right_wam7")
 
-    # moveit2_dual_arms.set_position_goal(position=(-0.33, -0.49, 1.95), frame_id="world", target_link="left_wam7")
-    # moveit2_dual_arms.set_orientation_goal(quat_xyzw=(0.00, 0.00, 0.00, 1.00), frame_id="world", target_link="left_wam7")
-    # moveit2_dual_arms.set_position_goal(pos_right.pose.position, frame_id="world", target_link="right_wam7")
-    # moveit2_dual_arms.set_orientation_goal(pos_right.pose.orientation, frame_id="world", target_link="right_wam7")
+    plan = moveit2_dual_arms.plan()
+    moveit2_dual_arms.execute(plan)
 
-    moveit2_dual_arms.plan()
-    rate = node.create_rate(10)
+    rate = node.create_rate(5)
 
-    while moveit2_dual_arms.query_state() != MoveIt2State.EXECUTING:
+    while moveit2_dual_arms.query_state() != MoveIt2State.EXECUTING or moveit2_dual_arms.query_state() != MoveIt2State.REQUESTING or moveit2_dual_arms.query_state() != MoveIt2State.IDLE:
         rate.sleep()
     future_ = moveit2_dual_arms.get_execution_future()
 
@@ -76,6 +77,9 @@ def main():
         rate.sleep()
 
     node.get_logger().info("status: " + str(future_.result().status))
+
+    moveit2_dual_arms.clear_goal_constraints()
+    moveit2_dual_arms.clear_path_constraints()
 
     rclpy.shutdown()
     executor_thread.join()
